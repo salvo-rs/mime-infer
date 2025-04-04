@@ -1,10 +1,8 @@
-extern crate phf;
-
 use unicase::UniCase;
 
 include!(env!("MIME_TYPES_GENERATED_PATH"));
 
-#[cfg(feature = "rev-mappings")]
+#[cfg(feature = "phf-map")]
 struct TopLevelExts {
     start: usize,
     end: usize,
