@@ -1,24 +1,19 @@
-#[cfg(feature = "phf-map")]
-extern crate phf_codegen;
-extern crate unicase;
-
-use unicase::UniCase;
-
 use std::env;
 use std::fs::File;
-use std::io::BufWriter;
 use std::io::prelude::*;
+use std::io::BufWriter;
 use std::path::Path;
 
 use std::collections::BTreeMap;
 
 use mime_types::MIME_TYPES;
+use unicase::UniCase;
 
 #[path = "src/mime_types.rs"]
 mod mime_types;
 
 #[cfg(feature = "phf-map")]
-const PHF_PATH: &str = "::impl_::phf";
+const PHF_PATH: &str = "phf";
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
@@ -117,7 +112,7 @@ fn build_rev_map<W: Write>(out: &mut W) {
     )
     .unwrap();
 
-    writeln!(out, "const EXTS [&'static str] = &{:?};", exts).unwrap();
+    writeln!(out, "const EXTS: &[&str] = &{:?};", exts).unwrap();
 }
 
 #[cfg(all(not(feature = "phf-map"), feature = "rev-map"))]
@@ -187,8 +182,8 @@ fn build_rev_map<W: Write>(out: &mut W) {
 }
 
 #[cfg(feature = "rev-map")]
-fn get_rev_map()
--> BTreeMap<UniCase<&'static str>, BTreeMap<UniCase<&'static str>, Vec<&'static str>>> {
+fn get_rev_map(
+) -> BTreeMap<UniCase<&'static str>, BTreeMap<UniCase<&'static str>, Vec<&'static str>>> {
     // First, collect all the mime type -> ext mappings)
     let mut dyn_map = BTreeMap::new();
     for &(key, types) in MIME_TYPES {
