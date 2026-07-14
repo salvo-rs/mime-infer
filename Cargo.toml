@@ -7,7 +7,7 @@ license = "MIT"
 description = "A simple crate for detection of a file's MIME type by its extension."
 keywords = ["mime", "filesystem", "extension"]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.92"
 repository = "https://github.com/salvo-rs/mime-infer"
 documentation = "https://docs.rs/mime-infer/"
 readme = "README.md"
@@ -22,17 +22,16 @@ rev-map = []
 
 [dependencies]
 mime = "0.3"
-unicase = "2.8"
-phf = { version = "0.13", optional = true, features = ["unicase"] }
-phf_codegen = { version = "0.13", optional = true }
+unicase = "2.9"
+phf = { version = "0.14", optional = true, features = ["unicase"] }
 
 [build-dependencies]
-unicase = "2.7.0"
-phf = { version = "0.13", optional = true, features = ["unicase"] }
-phf_codegen = { version = "0.13", optional = true }
+unicase = "2.9"
+phf = { version = "0.14", optional = true, features = ["unicase"] }
+phf_codegen = { version = "0.14", optional = true }
 
 [dev-dependencies]
-criterion = "0.7"
+divan = "0.1.21"
 
 [[example]]
 name = "rev_map"

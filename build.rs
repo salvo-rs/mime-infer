@@ -1,28 +1,41 @@
 use std::env;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::BufWriter;
-use std::path::Path;
+use std::io::Write;
+use std::path::{self, Path};
 
+#[cfg(feature = "rev-map")]
 use std::collections::BTreeMap;
 
+#[cfg(any(feature = "phf-map", feature = "rev-map"))]
 use mime_types::MIME_TYPES;
+#[cfg(any(feature = "phf-map", feature = "rev-map"))]
 use unicase::UniCase;
 
+#[cfg(any(feature = "phf-map", feature = "rev-map"))]
 #[path = "src/mime_types.rs"]
 mod mime_types;
 
 #[cfg(feature = "phf-map")]
 const PHF_PATH: &str = "phf";
 
+#[cfg(feature = "rev-map")]
+type SubLevelMap = BTreeMap<UniCase<&'static str>, Vec<&'static str>>;
+#[cfg(feature = "rev-map")]
+type ReverseMap = BTreeMap<UniCase<&'static str>, SubLevelMap>;
+
 fn main() {
+    println!("cargo:rerun-if-changed=src/mime_types.rs");
+
     let out_dir = env::var("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("mime_types_generated.rs");
+    let mime_types_generated_filename = "mime_types_generated.rs";
+    let dest_path = Path::new(&out_dir).join(mime_types_generated_filename);
     let mut outfile = BufWriter::new(File::create(&dest_path).unwrap());
 
     println!(
-        "cargo:rustc-env=MIME_TYPES_GENERATED_PATH={}",
-        dest_path.display()
+        "cargo:rustc-env=MIME_TYPES_GENERATED_PATH={separator}{filename}",
+        separator = path::MAIN_SEPARATOR,
+        filename = mime_types_generated_filename,
     );
 
     #[cfg(feature = "phf-map")]
@@ -30,6 +43,8 @@ fn main() {
 
     #[cfg(feature = "rev-map")]
     build_rev_map(&mut outfile);
+
+    outfile.flush().unwrap();
 }
 
 // Build forward mappings (ext -> mime type)
@@ -55,7 +70,7 @@ fn build_forward_map<W: Write>(out: &mut W) {
     }
 
     for (key, values) in map_entries {
-        forward_map.entry(UniCase::new(key), &format!("&{:?}", values));
+        forward_map.entry(UniCase::new(key), format!("&{:?}", values));
     }
 
     writeln!(
@@ -89,14 +104,14 @@ fn build_rev_map<W: Write>(out: &mut W) {
             exts.extend(sub_exts);
             let sub_end = exts.len();
 
-            sub_map.entry(sub, &format!("({}, {})", sub_start, sub_end));
+            sub_map.entry(sub, format!("({}, {})", sub_start, sub_end));
         }
 
         let top_end = exts.len();
 
         rev_map.entry(
             top,
-            &format!(
+            format!(
                 "TopLevelExts {{ start: {}, end: {}, subs: {} }}",
                 top_start,
                 top_end,
@@ -182,8 +197,7 @@ fn build_rev_map<W: Write>(out: &mut W) {
 }
 
 #[cfg(feature = "rev-map")]
-fn get_rev_map(
-) -> BTreeMap<UniCase<&'static str>, BTreeMap<UniCase<&'static str>, Vec<&'static str>>> {
+fn get_rev_map() -> ReverseMap {
     // First, collect all the mime type -> ext mappings)
     let mut dyn_map = BTreeMap::new();
     for &(key, types) in MIME_TYPES {
@@ -200,7 +214,8 @@ fn get_rev_map(
     dyn_map
 }
 
+#[cfg(feature = "rev-map")]
 fn split_mime(mime: &str) -> (&str, &str) {
-    let split_idx = mime.find('/').unwrap();
-    (&mime[..split_idx], &mime[split_idx + 1..])
+    mime.split_once('/')
+        .expect("MIME type mapping must contain a slash")
 }

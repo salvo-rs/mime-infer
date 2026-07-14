@@ -1,0 +1,14 @@
+[default.extend-words]
+# Registered file extensions in src/mime_types.rs.
+aas = "aas"
+aso = "aso"
+caf = "caf"
+gam = "gam"
+iif = "iif"
+itms = "itms"
+mak = "mak"
+odf = "odf"
+opf = "opf"
+styl = "styl"
+thn = "thn"
+vor = "vor"
