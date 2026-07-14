@@ -1,8 +1,8 @@
 use unicase::UniCase;
 
-include!(env!("MIME_TYPES_GENERATED_PATH"));
+include!(concat!(env!("OUT_DIR"), env!("MIME_TYPES_GENERATED_PATH")));
 
-#[cfg(feature = "phf-map")]
+#[cfg(feature = "rev-map")]
 struct TopLevelExts {
     start: usize,
     end: usize,
@@ -13,6 +13,7 @@ pub fn get_mime_types(ext: &str) -> Option<&'static [&'static str]> {
     map_lookup(&MIME_TYPES, ext).cloned()
 }
 
+#[cfg(feature = "rev-map")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
     if toplevel == "*" {
         return Some(EXTS);

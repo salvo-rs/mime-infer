@@ -1,11 +1,9 @@
-# mime_infer ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/salvo-rs/mime_infer/rust.yml?branch=main) [![Crates.io](https://img.shields.io/crates/v/mime-infer.svg)](https://crates.io/crates/mime-infer)
+# mime-infer ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/salvo-rs/mime-infer/rust.yml?branch=main) [![Crates.io](https://img.shields.io/crates/v/mime-infer.svg)](https://crates.io/crates/mime-infer)
 
-MIME/MediaType infering by file extension. 
+MIME/MediaType inference by file extension.
 Uses a static map of known file extension -> MIME type mappings.
 
-**Returning Contributors: New Requirements for Submissions Below**
-
-##### Required Rust Version: 1.33
+##### Required Rust Version: 1.92
 
 #### [Documentation](https://docs.rs/mime-infer/)
 
@@ -18,7 +16,7 @@ Refer to the following table to find a version of `mime_infer` which matches you
 | `mime` version | `mime_infer` version |
 |----------------|----------------------|
 | `0.1.x, 0.2.x` | `1.x.y` |
-| `0.3.x`        | `2.x.y` |
+| `0.3.x`        | `2.x.y` and later current releases |
 
 #### Note: MIME Types Returned Are Not Stable/Guaranteed
 The media types returned for a given extension are not considered to be part of the crate's
@@ -55,7 +53,7 @@ When opening a pull request, please include a link to an official document or RF
 the correct MIME type for the file type in question **in the commit message** so
 that the commit history can be used as an audit trail.
 
-Though we're only infering here, we like to be as correct as we can. 
+Though we're only inferring here, we like to be as correct as we can.
 It makes it much easier to vet your contribution if we don't have to search for corroborating material.
 
 #### Multiple MIME types per extension
@@ -65,7 +63,7 @@ type can use the `first*()` methods.
 
 The definition of "correct" is open to debate, however. In the author's opinion this should be 
 whatever is defined by the latest IETF RFC for the given file format, or otherwise explicitly 
-supercedes all others.
+supersedes all others.
 
 If an official IANA registration replaces an older "experimental" style media type, please
 place the new type before the old type in the list, but keep the old type for reference:
