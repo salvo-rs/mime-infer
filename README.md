@@ -1,4 +1,9 @@
-# mime-infer ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/salvo-rs/mime-infer/rust.yml?branch=main) [![Crates.io](https://img.shields.io/crates/v/mime-infer.svg)](https://crates.io/crates/mime-infer)
+# mime-infer
+
+[![Rust](https://github.com/salvo-rs/mime-infer/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/salvo-rs/mime-infer/actions/workflows/rust.yml)
+[![Crates.io](https://img.shields.io/crates/v/mime-infer.svg)](https://crates.io/crates/mime-infer)
+[![Documentation](https://docs.rs/mime-infer/badge.svg)](https://docs.rs/mime-infer/)
+[![License](https://img.shields.io/crates/l/mime-infer.svg)](LICENSE)
 
 MIME/MediaType inference by file extension.
 Uses a static map of known file extension -> MIME type mappings.
