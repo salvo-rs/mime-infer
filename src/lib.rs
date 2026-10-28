@@ -377,6 +377,8 @@ pub fn get_mime_type_str(search_ext: &str) -> Option<&'static str> {
 /// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
+///
+/// Wildcard results contain each extension once, in lexicographic order.
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
     get_extensions(mime.type_().as_ref(), mime.subtype().as_ref())
@@ -392,6 +394,8 @@ pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
 /// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
+///
+/// Wildcard results contain each extension once, in lexicographic order.
 ///
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]> {
@@ -413,6 +417,8 @@ pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]
 /// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
+///
+/// Wildcard results contain each extension once, in lexicographic order.
 #[cfg(feature = "rev-map")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
     impl_::get_extensions(toplevel, sublevel)

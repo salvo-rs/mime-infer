@@ -11,6 +11,7 @@ fn global_wildcard_contains_every_extension_once() {
     let expected: BTreeSet<_> = mime_types::MIME_TYPES.iter().map(|&(ext, _)| ext).collect();
     let actual = get_extensions("*", "*").unwrap();
     assert_eq!(actual.len(), expected.len());
+    assert!(actual.windows(2).all(|pair| pair[0] < pair[1]));
     assert_eq!(actual.iter().copied().collect::<BTreeSet<_>>(), expected);
     assert_eq!(get_mime_extensions_str("*/*"), Some(actual));
 }
@@ -27,6 +28,10 @@ fn every_top_level_wildcard_contains_its_extensions_once() {
     for (top, extensions) in expected {
         let actual = get_extensions(top, "*").unwrap();
         assert_eq!(actual.len(), extensions.len(), "{top}/* has duplicates");
+        assert!(
+            actual.windows(2).all(|pair| pair[0] < pair[1]),
+            "{top}/* is not in lexicographic order"
+        );
         assert_eq!(
             actual.iter().copied().collect::<BTreeSet<_>>(),
             extensions,
