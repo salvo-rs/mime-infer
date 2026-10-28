@@ -35,6 +35,20 @@ Be wary of unsafe or un-validated assumptions about file structure or length.
 An extension may also have multiple applicable MIME types. When more than one is returned, the first
 is considered to be the most "correct"--see below for elaboration.
 
+### Benchmarks
+
+Run `cargo bench --bench benchmark` for binary-search lookups and
+`cargo bench --bench benchmark --features phf-map` for PHF lookups. Use the same
+feature set, machine, and sampling options when comparing changes. Add
+`--no-default-features` to measure without reverse mappings.
+
+Inputs, including uppercase extensions and file paths, are prepared outside the
+timed closures. Batch benchmarks report the time for a full table pass and an
+item counter for lookup throughput. Separate cases cover parsing, unknown and
+Unicode extensions, long inputs, paths, and reverse lookups when enabled.
+Long-input cases default to 50 samples of one lookup to keep their cost bounded.
+For a quick execution check, append `-- --sample-count 3 --sample-size 1`.
+
 Contributing
 -----------
 

@@ -105,6 +105,9 @@ impl MimeInfer {
 
     /// Get the first inferred `Mime`, if applicable.
     ///
+    /// Each call parses the stored media-type string. If only the string is
+    /// needed, use [`Self::first_raw()`] to avoid parsing on a hot path.
+    ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn first(&self) -> Option<Mime> {
         self.first_raw().map(expect_mime)
@@ -166,6 +169,9 @@ impl MimeInfer {
     }
 
     /// Get an iterator over the `Mime` values contained in this infer.
+    ///
+    /// Each yielded value is parsed from its stored media-type string. Use
+    /// [`Self::iter_raw()`] when the strings themselves are sufficient.
     ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn iter(&self) -> Iter {
