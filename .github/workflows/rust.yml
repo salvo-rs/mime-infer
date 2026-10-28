@@ -12,7 +12,19 @@ env:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} / Rust ${{ matrix.toolchain }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        toolchain: [1.95.0, stable]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      CARGO_TARGET_DIR: ${{ matrix.os == 'windows-latest' && 'D:/BuildCache/mime-infer' || '/tmp/mime-infer-target' }}
 
     steps:
       - name: Check out repository
@@ -20,8 +32,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Rust 1.95.0
-        run: rustup toolchain install 1.95.0 --profile minimal --component clippy,rustfmt
+      - name: Install Rust
+        run: rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal --component clippy,rustfmt
 
       - name: Check formatting
         run: cargo fmt --all -- --check
