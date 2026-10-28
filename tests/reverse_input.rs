@@ -36,7 +36,9 @@ fn reverse_lookup_rejects_invalid_essences() {
         "\u{2003}text/plain",
         "text/pl ain",
         "text /plain",
+        "text / plain",
         "text/ plain",
+        "image / svg+xml",
         "text/(plain)",
         "text/plain?",
     ] {
