@@ -379,7 +379,7 @@ pub fn get_mime_type_str(search_ext: &str) -> Option<&'static str> {
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
-    get_extensions(mime.type_().as_ref(), mime.subtype().as_ref())
+    get_mime_extensions_str(mime.essence_str())
 }
 
 /// Get a list of known extensions for a MIME type string.
