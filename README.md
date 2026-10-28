@@ -8,7 +8,7 @@
 MIME/MediaType inference by file extension.
 Uses a static map of known file extension -> MIME type mappings.
 
-##### Required Rust Version: 1.92
+##### Required Rust Version: 1.95
 
 #### [Documentation](https://docs.rs/mime-infer/)
 

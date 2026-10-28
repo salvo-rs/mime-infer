@@ -20,8 +20,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Rust 1.92.0
-        run: rustup toolchain install 1.92.0 --profile minimal --component clippy,rustfmt
+      - name: Install Rust 1.95.0
+        run: rustup toolchain install 1.95.0 --profile minimal --component clippy,rustfmt
 
       - name: Check formatting
         run: cargo fmt --all -- --check
