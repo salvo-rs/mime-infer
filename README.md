@@ -32,6 +32,11 @@ Note that only the extensions of paths/filenames are inspected in order to infer
 file that may or may not reside at that path may or may not be a valid file of the returned MIME type.
 Be wary of unsafe or un-validated assumptions about file structure or length.
 
+Extension matching uses Unicode case folding, including for non-ASCII input. For example,
+`jſ` matches `js`, `ſvg` matches `svg`, and `Kml` matches `kml`. This applies to both
+`from_ext` and the extension extracted by `from_path`. Applications that require ASCII-only
+filenames or extension allowlists must validate that requirement separately.
+
 An extension may also have multiple applicable MIME types. When more than one is returned, the first
 is considered to be the most "correct"--see below for elaboration.
 

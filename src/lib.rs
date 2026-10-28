@@ -54,7 +54,9 @@ pub struct MimeInfer(&'static [&'static str]);
 impl MimeInfer {
     /// Infer the MIME type of a file (real or otherwise) with the given extension.
     ///
-    /// The search is case-insensitive.
+    /// The search uses Unicode case folding, so non-ASCII input can match an ASCII extension:
+    /// for example, `jſ` matches `js` and `Kml` matches `kml`.
+    /// Applications that require ASCII-only extensions must validate that requirement separately.
     ///
     /// If `ext` is empty or has no (currently) known MIME type mapping, then an empty infer is
     /// returned.
@@ -72,7 +74,9 @@ impl MimeInfer {
     /// If `path` has no extension, the extension cannot be converted to `str`, or has
     /// no known MIME type mapping, then an empty infer is returned.
     ///
-    /// The search is case-insensitive.
+    /// The extension is matched using the same Unicode case folding as [`Self::from_ext`].
+    /// For example, `file.ſvg` matches the `svg` extension. Applications that require ASCII-only
+    /// filenames or extensions must validate that requirement separately.
     ///
     /// ## Note
     /// **Infer** is the operative word here, as there are no guarantees that the contents of the
