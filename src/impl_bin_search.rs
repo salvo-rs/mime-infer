@@ -12,9 +12,7 @@ struct TopLevelExts {
 }
 
 pub fn get_mime_types(ext: &str) -> Option<&'static [&'static str]> {
-    let ext = UniCase::new(ext);
-
-    map_lookup(MIME_TYPES, &ext)
+    map_lookup(MIME_TYPES, ext)
 }
 
 #[cfg(feature = "rev-map")]
