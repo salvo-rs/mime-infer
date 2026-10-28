@@ -59,7 +59,7 @@ impl MimeInfer {
     /// If `ext` is empty or has no (currently) known MIME type mapping, then an empty infer is
     /// returned.
     pub fn from_ext(ext: &str) -> MimeInfer {
-        if ext.is_empty() {
+        if ext.is_empty() || ext.len() > impl_::MAX_EXT_INPUT_BYTES {
             return MimeInfer(&[]);
         }
 
@@ -527,6 +527,56 @@ mod tests {
                 n_ext
             );
         }
+    }
+
+    #[test]
+    fn extension_length_bound_preserves_all_mappings() {
+        for &(ext, expected) in MIME_TYPES {
+            assert!(ext.len() <= super::impl_::MAX_EXT_INPUT_BYTES);
+            assert_eq!(from_ext(ext).iter_raw().collect::<Vec<_>>(), expected);
+            assert_eq!(
+                from_ext(&ext.to_ascii_uppercase())
+                    .iter_raw()
+                    .collect::<Vec<_>>(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn extension_length_bound_preserves_unicode_case_folding() {
+        // Kelvin sign, long s, and the fl ligature fold to ASCII, including a
+        // fold that expands a single input scalar into multiple output scalars.
+        for (unicode, ascii) in [
+            ("\u{212a}tx", "ktx"),
+            ("\u{017f}vg", "svg"),
+            ("\u{fb02}ac", "flac"),
+        ] {
+            assert!(!from_ext(ascii).is_empty());
+            assert_eq!(from_ext(unicode), from_ext(ascii));
+        }
+    }
+
+    #[test]
+    fn unicode_case_folding_does_not_remove_input_scalars() {
+        // The length bound relies on this property of the case-folding table.
+        // Check every Unicode scalar so dependency upgrades cannot silently
+        // invalidate the bound's proof.
+        for scalar in (0..=0x10ffff).filter_map(char::from_u32) {
+            let mut buf = [0; 4];
+            let input = scalar.encode_utf8(&mut buf);
+            let folded = unicase::UniCase::unicode(input).to_folded_case();
+            assert!(!folded.is_empty(), "case folding removed {scalar:?}");
+        }
+    }
+
+    #[test]
+    fn overlong_extensions_are_unknown() {
+        let bound = super::impl_::MAX_EXT_INPUT_BYTES;
+        assert!(from_ext(&"z".repeat(bound + 1)).is_empty());
+        assert!(from_ext(&"z".repeat(1_000_000)).is_empty());
+        assert!(from_ext(&"\u{212a}".repeat(bound + 1)).is_empty());
+        assert!(from_path(format!("file.{}", "z".repeat(1_000_000))).is_empty());
     }
 
     #[test]

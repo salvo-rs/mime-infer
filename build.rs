@@ -7,12 +7,9 @@ use std::path::{self, Path};
 #[cfg(feature = "rev-map")]
 use std::collections::BTreeMap;
 
-#[cfg(any(feature = "phf-map", feature = "rev-map"))]
 use mime_types::MIME_TYPES;
-#[cfg(any(feature = "phf-map", feature = "rev-map"))]
 use unicase::UniCase;
 
-#[cfg(any(feature = "phf-map", feature = "rev-map"))]
 #[path = "src/mime_types.rs"]
 mod mime_types;
 
@@ -31,6 +28,23 @@ fn main() {
     let mime_types_generated_filename = "mime_types_generated.rs";
     let dest_path = Path::new(&out_dir).join(mime_types_generated_filename);
     let mut outfile = BufWriter::new(File::create(&dest_path).unwrap());
+
+    // Unicode case folding emits at least one scalar per input scalar, and an
+    // input scalar occupies at most four UTF-8 bytes. Thus no equivalent input
+    // can exceed four times the longest folded key's byte length. Keep this
+    // conservative bound derived from the actual table rather than assuming
+    // extensions are ASCII or rejecting supported Unicode equivalents.
+    let max_ext_input_bytes = MIME_TYPES
+        .iter()
+        .map(|(ext, _)| UniCase::new(ext).to_folded_case().len())
+        .max()
+        .unwrap_or(0)
+        * 4;
+    writeln!(
+        outfile,
+        "pub(crate) const MAX_EXT_INPUT_BYTES: usize = {max_ext_input_bytes};"
+    )
+    .unwrap();
 
     println!(
         "cargo:rustc-env=MIME_TYPES_GENERATED_PATH={separator}{filename}",
