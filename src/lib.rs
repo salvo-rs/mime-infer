@@ -387,6 +387,8 @@ pub fn get_mime_type_str(search_ext: &str) -> Option<&'static str> {
 /// `*/*` returns all extensions. A wildcard top-level with a concrete subtype is invalid.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
+///
+/// Wildcard results contain each extension once, in lexicographic order.
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
     get_mime_extensions_str(mime.essence_str())
@@ -405,6 +407,8 @@ pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
 /// `*/*` returns all extensions. A wildcard top-level with a concrete subtype is invalid.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
+///
+/// Wildcard results contain each extension once, in lexicographic order.
 ///
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]> {
@@ -432,6 +436,8 @@ pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]
 /// `*/*` returns all extensions. A wildcard top-level with a concrete subtype is invalid.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
+///
+/// Wildcard results contain each extension once, in lexicographic order.
 #[cfg(feature = "rev-map")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
     let valid = match (toplevel, sublevel) {
