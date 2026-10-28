@@ -1,9 +1,8 @@
-//! Infering of MIME types by file extension.
+//! Inferring MIME types by file extension.
 //!
 //! Uses a static list of file-extension : MIME type mappings.
 //!
 //! ```
-//! # extern crate mime;
 //! // the file doesn't have to exist, it just looks at the path
 //! let infer = mime_infer::from_path("some_file.gif");
 //! assert_eq!(infer.first(), Some(mime::IMAGE_GIF));
@@ -20,7 +19,6 @@
 //! returned MIME type.  Be wary of unsafe or un-validated assumptions about file structure or
 //! length.
 pub extern crate mime;
-extern crate unicase;
 
 pub use mime::Mime;
 
@@ -37,19 +35,19 @@ mod impl_;
 #[path = "impl_bin_search.rs"]
 mod impl_;
 
-/// A "infer" of the MIME/Media Type(s) of an extension or path as one or more
-/// [`Mime`](struct.Mime.html) instances.
+/// An inference of the MIME/Media Type(s) of an extension or path as one or more
+/// [`Mime`] instances.
 ///
 /// ### Note: Ordering
 /// A given file format may have one or more applicable Media Types; in this case
 /// the first Media Type returned is whatever is declared in the latest IETF RFC for the
-/// presumed file format or the one that explicitly supercedes all others.
+/// presumed file format or the one that explicitly supersedes all others.
 /// Ordering of additional Media Types is arbitrary.
 ///
 /// ### Note: Values Not Stable
 /// The exact Media Types returned in any given infer are not considered to be stable and are often
 /// updated in patch releases in order to reflect the most up-to-date information possible.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 // FIXME: change repr when `mime` gains macro/const fn constructor
 pub struct MimeInfer(&'static [&'static str]);
 
@@ -95,26 +93,34 @@ impl MimeInfer {
         self.0.is_empty()
     }
 
-    /// Get the number of MIME types in the current infer.
-    pub fn count(&self) -> usize {
+    /// Get the number of MIME types in the current inference.
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 
-    /// Get the first infered `Mime`, if applicable.
+    /// Get the number of MIME types in the current inference.
+    pub fn count(&self) -> usize {
+        self.len()
+    }
+
+    /// Get the first inferred `Mime`, if applicable.
+    ///
+    /// Each call parses the stored media-type string. If only the string is
+    /// needed, use [`Self::first_raw()`] to avoid parsing on a hot path.
     ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn first(&self) -> Option<Mime> {
         self.first_raw().map(expect_mime)
     }
 
-    /// Get the first infered Media Type as a string, if applicable.
+    /// Get the first inferred Media Type as a string, if applicable.
     ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn first_raw(&self) -> Option<&'static str> {
         self.0.first().copied()
     }
 
-    /// Get the first infered `Mime`, or if the infer is empty, return
+    /// Get the first inferred `Mime`, or if the infer is empty, return
     /// [`application/octet-stream`] instead.
     ///
     /// See [Note: Ordering](#note-ordering) above.
@@ -136,7 +142,7 @@ impl MimeInfer {
         self.first_or(mime::APPLICATION_OCTET_STREAM)
     }
 
-    /// Get the first infered `Mime`, or if the infer is empty, return
+    /// Get the first inferred `Mime`, or if the infer is empty, return
     /// [`text/plain`](::mime::TEXT_PLAIN) instead.
     ///
     /// See [Note: Ordering](#note-ordering) above.
@@ -144,14 +150,14 @@ impl MimeInfer {
         self.first_or(mime::TEXT_PLAIN)
     }
 
-    /// Get the first infered `Mime`, or if the infer is empty, return the given `Mime` instead.
+    /// Get the first inferred `Mime`, or if the infer is empty, return the given `Mime` instead.
     ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn first_or(&self, default: Mime) -> Mime {
         self.first().unwrap_or(default)
     }
 
-    /// Get the first infered `Mime`, or if the infer is empty, execute the closure and return its
+    /// Get the first inferred `Mime`, or if the infer is empty, execute the closure and return its
     /// result.
     ///
     /// See [Note: Ordering](#note-ordering) above.
@@ -163,6 +169,9 @@ impl MimeInfer {
     }
 
     /// Get an iterator over the `Mime` values contained in this infer.
+    ///
+    /// Each yielded value is parsed from its stored media-type string. Use
+    /// [`Self::iter_raw()`] when the strings themselves are sufficient.
     ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn iter(&self) -> Iter {
@@ -383,29 +392,22 @@ pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
 ///
 /// Ignores parameters (only searches `<main type>/<subtype>`). Case-insensitive.
 ///
-/// Returns `None` if the MIME type is unknown.
+/// Returns `None` if the MIME type is invalid or unknown.
 ///
 /// ### Wildcards
 /// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
 ///
-/// ### Panics
-/// If `mime_str` is not a valid MIME type specifier (naive).
 #[cfg(feature = "rev-map")]
-pub fn get_mime_extensions_str(mut mime_str: &str) -> Option<&'static [&'static str]> {
-    mime_str = mime_str.trim();
+pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]> {
+    let mime_str = mime_str.trim();
+    let essence = mime_str
+        .split_once(';')
+        .map_or(mime_str, |(essence, _)| essence);
+    let (top, sub) = essence.split_once('/')?;
 
-    if let Some(sep_idx) = mime_str.find(';') {
-        mime_str = &mime_str[..sep_idx];
-    }
-
-    let (top, sub) = {
-        let split_idx = mime_str.find('/')?;
-        (&mime_str[..split_idx], &mime_str[split_idx + 1..])
-    };
-
-    get_extensions(top, sub)
+    get_extensions(top.trim(), sub.trim())
 }
 
 /// Get the extensions for a given top-level and sub-level of a MIME type
@@ -425,17 +427,16 @@ pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'stat
 /// Get the MIME type for `application/octet-stream` (generic binary stream)
 #[deprecated(since = "2.0.0", note = "use `mime::APPLICATION_OCTET_STREAM` instead")]
 pub fn octet_stream() -> Mime {
-    "application/octet-stream".parse().unwrap()
+    mime::APPLICATION_OCTET_STREAM
 }
 
 #[cfg(test)]
 mod tests {
     include!("mime_types.rs");
 
-    use super::{expect_mime, from_ext, from_path, get_mime_extensions_str};
-    #[allow(deprecated, unused_imports)]
-    use std::ascii::AsciiExt;
-
+    #[cfg(feature = "rev-map")]
+    use super::get_mime_extensions_str;
+    use super::{expect_mime, from_ext, from_path};
     use std::fmt::Debug;
     use std::path::Path;
 
@@ -446,10 +447,15 @@ mod tests {
         assert_type_bounds::<super::MimeInfer>();
         assert_type_bounds::<super::Iter>();
         assert_type_bounds::<super::IterRaw>();
+
+        let empty = super::MimeInfer::default();
+        assert!(empty.is_empty());
+        assert_eq!(empty.len(), 0);
+        assert_eq!(empty.count(), 0);
     }
 
     #[test]
-    fn test_mime_type_infering() {
+    fn test_mime_type_inferring() {
         assert_eq!(
             from_ext("gif").first_or_octet_stream().to_string(),
             "image/gif".to_string()
@@ -462,6 +468,8 @@ mod tests {
             from_ext("blahblah").first_or_octet_stream().to_string(),
             "application/octet-stream".to_string()
         );
+        assert_eq!(from_ext("rpm").first_raw(), Some("application/x-rpm"));
+        assert_eq!(from_ext("zst").first_raw(), Some("application/zstd"));
 
         assert_eq!(
             from_path(Path::new("/path/to/file.gif"))
@@ -478,7 +486,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mime_type_infering_opt() {
+    fn test_mime_type_inferring_opt() {
         assert_eq!(
             from_ext("gif").first().unwrap().to_string(),
             "image/gif".to_string()
@@ -528,7 +536,18 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "rev-map")]
     fn test_get_mime_extensions_str_no_panic_if_bad_mime() {
         assert_eq!(get_mime_extensions_str(""), None);
+        assert_eq!(get_mime_extensions_str("not-a-mime"), None);
+    }
+
+    #[test]
+    #[cfg(feature = "rev-map")]
+    fn test_get_mime_extensions_str_ignores_parameters_and_whitespace() {
+        assert_eq!(
+            get_mime_extensions_str(" text/plain ; charset=utf-8 "),
+            get_mime_extensions_str("text/plain")
+        );
     }
 }
