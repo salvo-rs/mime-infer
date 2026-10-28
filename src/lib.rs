@@ -380,7 +380,7 @@ pub fn get_mime_type_str(search_ext: &str) -> Option<&'static str> {
 /// Returns `None` if the MIME type is unknown.
 ///
 /// ### Wildcards
-/// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
+/// `*/*` returns all extensions. A wildcard top-level with a concrete subtype is invalid.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
 #[cfg(feature = "rev-map")]
@@ -391,37 +391,81 @@ pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
 /// Get a list of known extensions for a MIME type string.
 ///
 /// Ignores parameters (only searches `<main type>/<subtype>`). Case-insensitive.
+/// ASCII spaces surrounding the essence are ignored; the type and subtype must be nonempty ASCII
+/// tokens with no surrounding spaces of their own. ASCII control characters are rejected anywhere
+/// in the input. Parameters are otherwise not validated.
 ///
 /// Returns `None` if the MIME type is invalid or unknown.
 ///
 /// ### Wildcards
-/// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
+/// `*/*` returns all extensions. A wildcard top-level with a concrete subtype is invalid.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
 ///
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]> {
-    let mime_str = mime_str.trim();
+    if mime_str.bytes().any(|byte| byte.is_ascii_control()) {
+        return None;
+    }
+
+    let mime_str = mime_str.trim_matches(' ');
     let essence = mime_str
         .split_once(';')
-        .map_or(mime_str, |(essence, _)| essence);
+        .map_or(mime_str, |(essence, _)| essence)
+        .trim_matches(' ');
     let (top, sub) = essence.split_once('/')?;
 
-    get_extensions(top.trim(), sub.trim())
+    get_extensions(top, sub)
 }
 
 /// Get the extensions for a given top-level and sub-level of a MIME type
 /// (`{toplevel}/{sublevel}`).
 ///
-/// Returns `None` if `toplevel` or `sublevel` are unknown.
+/// Returns `None` if `toplevel` or `sublevel` are invalid or unknown.
+/// Both components must be nonempty ASCII tokens without surrounding spaces.
 ///
 /// ### Wildcards
-/// If the top-level of the MIME type is a wildcard (`*`), returns all extensions.
+/// `*/*` returns all extensions. A wildcard top-level with a concrete subtype is invalid.
 ///
 /// If the sub-level of the MIME type is a wildcard, returns all extensions for the top-level.
 #[cfg(feature = "rev-map")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
+    let valid = match (toplevel, sublevel) {
+        ("*", "*") => true,
+        ("*", _) => false,
+        (_, "*") => is_mime_token(toplevel),
+        _ => is_mime_token(toplevel) && is_mime_token(sublevel),
+    };
+    if !valid {
+        return None;
+    }
+
     impl_::get_extensions(toplevel, sublevel)
+}
+
+#[cfg(feature = "rev-map")]
+fn is_mime_token(value: &str) -> bool {
+    // HTTP token characters, excluding `*`, which is only accepted as a whole wildcard.
+    !value.is_empty()
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric()
+                || matches!(
+                    byte,
+                    b'!' | b'#'
+                        | b'$'
+                        | b'%'
+                        | b'&'
+                        | b'\''
+                        | b'+'
+                        | b'-'
+                        | b'.'
+                        | b'^'
+                        | b'_'
+                        | b'`'
+                        | b'|'
+                        | b'~'
+                )
+        })
 }
 
 /// Get the MIME type for `application/octet-stream` (generic binary stream)
