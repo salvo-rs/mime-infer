@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::{self, Path};
 
 #[cfg(feature = "rev-map")]
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(any(feature = "phf-map", feature = "rev-map"))]
 use mime_types::MIME_TYPES;
@@ -94,7 +94,7 @@ fn build_rev_map<W: Write>(out: &mut W) {
     let mut exts = Vec::new();
 
     for (top, subs) in dyn_map {
-        let top_start = exts.len();
+        let top_exts = unique_extensions(subs.values().flatten().copied());
 
         let mut sub_map = PhfMap::new();
         sub_map.phf_path(PHF_PATH);
@@ -107,14 +107,11 @@ fn build_rev_map<W: Write>(out: &mut W) {
             sub_map.entry(sub, format!("({}, {})", sub_start, sub_end));
         }
 
-        let top_end = exts.len();
-
         rev_map.entry(
             top,
             format!(
-                "TopLevelExts {{ start: {}, end: {}, subs: {} }}",
-                top_start,
-                top_end,
+                "TopLevelExts {{ extensions: &{:?}, subs: {} }}",
+                top_exts,
                 sub_map.build()
             ),
         );
@@ -128,6 +125,7 @@ fn build_rev_map<W: Write>(out: &mut W) {
     .unwrap();
 
     writeln!(out, "const EXTS: &[&str] = &{:?};", exts).unwrap();
+    write_all_extensions(out);
 }
 
 #[cfg(all(not(feature = "phf-map"), feature = "rev-map"))]
@@ -159,7 +157,7 @@ fn build_rev_map<W: Write>(out: &mut W) {
     let mut exts = Vec::new();
 
     for (top, subs) in dyn_map {
-        let top_start = exts.len();
+        let top_exts = unique_extensions(subs.values().flatten().copied());
 
         let mut sub_map = String::new();
 
@@ -178,14 +176,11 @@ fn build_rev_map<W: Write>(out: &mut W) {
             .unwrap();
         }
 
-        let top_end = exts.len();
-
         write!(
             out,
-            "({}, TopLevelExts {{ start: {}, end: {}, subs: &[{}] }}),",
+            "({}, TopLevelExts {{ extensions: &{:?}, subs: &[{}] }}),",
             unicase_const!(top),
-            top_start,
-            top_end,
+            top_exts,
             sub_map
         )
         .unwrap();
@@ -194,6 +189,22 @@ fn build_rev_map<W: Write>(out: &mut W) {
     writeln!(out, "];").unwrap();
 
     writeln!(out, "const EXTS: &[&str] = &{:?};", exts).unwrap();
+    write_all_extensions(out);
+}
+
+#[cfg(feature = "rev-map")]
+fn unique_extensions<'a>(extensions: impl IntoIterator<Item = &'a str>) -> Vec<&'a str> {
+    extensions
+        .into_iter()
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
+#[cfg(feature = "rev-map")]
+fn write_all_extensions<W: Write>(out: &mut W) {
+    let all_exts = unique_extensions(MIME_TYPES.iter().map(|&(ext, _)| ext));
+    writeln!(out, "const ALL_EXTS: &[&str] = &{:?};", all_exts).unwrap();
 }
 
 #[cfg(feature = "rev-map")]

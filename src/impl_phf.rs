@@ -4,8 +4,7 @@ include!(concat!(env!("OUT_DIR"), env!("MIME_TYPES_GENERATED_PATH")));
 
 #[cfg(feature = "rev-map")]
 struct TopLevelExts {
-    start: usize,
-    end: usize,
+    extensions: &'static [&'static str],
     subs: phf::Map<UniCase<&'static str>, (usize, usize)>,
 }
 
@@ -16,13 +15,13 @@ pub fn get_mime_types(ext: &str) -> Option<&'static [&'static str]> {
 #[cfg(feature = "rev-map")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
     if toplevel == "*" {
-        return Some(EXTS);
+        return Some(ALL_EXTS);
     }
 
     let top = map_lookup(&REV_MAPPINGS, toplevel)?;
 
     if sublevel == "*" {
-        return Some(&EXTS[top.start..top.end]);
+        return Some(top.extensions);
     }
 
     let sub = map_lookup(&top.subs, sublevel)?;
