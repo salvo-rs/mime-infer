@@ -2,6 +2,14 @@
 //!
 //! Uses a static list of file-extension : MIME type mappings.
 //!
+//! ### Features
+//! - `rev-map` (enabled by default) adds MIME-to-extension queries. Reverse results
+//!   are static slices, including separate sorted, deduplicated wildcard lists,
+//!   so linked reverse tables trade static data for allocation-free queries.
+//!   Disable default features if only forward inference is needed.
+//! - `phf-map` selects perfect-hash lookup instead of binary search, independently
+//!   of `rev-map`.
+//!
 //! ```
 //! // the file doesn't have to exist, it just looks at the path
 //! let infer = mime_infer::from_path("some_file.gif");
