@@ -187,7 +187,7 @@ impl MimeInfer {
     ///
     /// See [Note: Ordering](#note-ordering) above.
     pub fn iter(&self) -> Iter {
-        Iter(self.iter_raw().map(expect_mime))
+        Iter(self.iter_raw())
     }
 
     /// Get an iterator over the raw media-type strings in this infer.
@@ -220,13 +220,25 @@ impl IntoIterator for &MimeInfer {
 ///
 /// See [Note: Ordering on `MimeInfer`](struct.MimeInfer.html#note-ordering).
 #[derive(Clone, Debug)]
-pub struct Iter(iter::Map<IterRaw, fn(&'static str) -> Mime>);
+pub struct Iter(IterRaw);
 
 impl Iterator for Iter {
     type Item = Mime;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
+        self.0.next().map(expect_mime)
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.0.nth(n).map(expect_mime)
+    }
+
+    fn count(self) -> usize {
+        self.0.len()
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -236,7 +248,11 @@ impl Iterator for Iter {
 
 impl DoubleEndedIterator for Iter {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.0.next_back()
+        self.0.next_back().map(expect_mime)
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        self.0.nth_back(n).map(expect_mime)
     }
 }
 

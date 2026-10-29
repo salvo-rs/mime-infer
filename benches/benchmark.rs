@@ -51,6 +51,45 @@ fn from_ext_lowercase_parsed(bencher: Bencher) {
         });
 }
 
+// Prepare the inference outside the timer to isolate adapter consumption from
+// lookup. Item counters report adapter operations, including any returned
+// Mime's parse and drop. These inputs cover empty, single, and multiple values.
+#[divan::bench(args = ["unknown-extension", "txt", "ttf"])]
+fn parsed_iter_count(bencher: Bencher, ext: &str) {
+    let inferred = from_ext(ext);
+    bencher.counter(ItemsCount::new(1usize)).bench(|| {
+        black_box(black_box(inferred).iter().count());
+    });
+}
+
+#[divan::bench(args = ["unknown-extension", "txt", "ttf"])]
+fn parsed_iter_last(bencher: Bencher, ext: &str) {
+    let inferred = from_ext(ext);
+    bencher.counter(ItemsCount::new(1usize)).bench(|| {
+        black_box(black_box(inferred).iter().last());
+    });
+}
+
+// For ttf, index 1 skips a MIME value; index 3 is past the end. Both selectors
+// also exercise these cases on empty and single-value inferences.
+#[divan::bench(args = ["unknown-extension", "txt", "ttf"])]
+fn parsed_iter_nth(bencher: Bencher, ext: &str) {
+    let inferred = from_ext(ext);
+    bencher.counter(ItemsCount::new(2usize)).bench(|| {
+        black_box(black_box(inferred).iter().nth(black_box(1)));
+        black_box(black_box(inferred).iter().nth(black_box(3)));
+    });
+}
+
+#[divan::bench(args = ["unknown-extension", "txt", "ttf"])]
+fn parsed_iter_nth_back(bencher: Bencher, ext: &str) {
+    let inferred = from_ext(ext);
+    bencher.counter(ItemsCount::new(2usize)).bench(|| {
+        black_box(black_box(inferred).iter().nth_back(black_box(1)));
+        black_box(black_box(inferred).iter().nth_back(black_box(3)));
+    });
+}
+
 #[divan::bench(args = ["unknown-extension", "", ".txt"])]
 fn from_ext_unknown(bencher: Bencher, ext: &str) {
     bencher.counter(ItemsCount::new(1usize)).bench(|| {
