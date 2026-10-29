@@ -51,8 +51,12 @@ Inputs, including uppercase extensions and file paths, are prepared outside the
 timed closures. Batch benchmarks report the time for a full table pass and an
 item counter for lookup throughput. Separate cases cover parsing, unknown and
 Unicode extensions, long inputs, paths, and reverse lookups when enabled.
-Long-input cases default to 50 samples of one lookup to keep their cost bounded.
+Long-input cases use 50 samples with adaptive batch sizes so fast length
+rejections can be measured above the timer's resolution. Each input is allocated
+once and reused across iterations.
 For a quick execution check, append `-- --sample-count 3 --sample-size 1`.
+That override checks execution only; single-lookup samples may be below the
+timer's resolution and should not be used to compare performance.
 
 Contributing
 -----------

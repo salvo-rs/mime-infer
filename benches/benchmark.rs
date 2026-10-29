@@ -58,9 +58,9 @@ fn from_ext_unknown(bencher: Bencher, ext: &str) {
     });
 }
 
-// Fixed, small samples avoid adaptive batching of many 1 MB lookups. Inputs are
-// allocated once outside the timer. CLI sample options can still override this.
-#[divan::bench(args = [256, 4096, 1_000_000], sample_count = 50, sample_size = 1)]
+// Let Divan batch fast length rejections above the timer's resolution. Each
+// input is allocated once outside the timer and reused across iterations.
+#[divan::bench(args = [256, 4096, 1_000_000], sample_count = 50)]
 fn from_ext_long_unknown(bencher: Bencher, len: usize) {
     let ext = "z".repeat(len);
     bencher.counter(ItemsCount::new(1usize)).bench(|| {
