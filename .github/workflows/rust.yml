@@ -56,3 +56,28 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
         run: cargo doc --all-features --no-deps
+
+  minimum-mime:
+    name: Minimum mime dependency / Rust 1.95.0
+    runs-on: ubuntu-latest
+    env:
+      RUSTUP_TOOLCHAIN: 1.95.0
+      CARGO_TARGET_DIR: /tmp/mime-infer-minimum-mime-target
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Rust 1.95.0
+        run: rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal
+
+      - name: Resolve the minimum supported mime version
+        run: cargo update -p mime --precise 0.3.17
+
+      - name: Check the library for every feature combination
+        run: |
+          cargo check --locked --lib
+          cargo check --locked --lib --all-features
+          cargo check --locked --lib --no-default-features
+          cargo check --locked --lib --no-default-features --features phf-map
