@@ -46,6 +46,29 @@ fn main() {
     )
     .unwrap();
 
+    #[cfg(feature = "rev-map")]
+    {
+        // Reverse lookup only accepts ASCII tokens, so their byte lengths can
+        // be bounded directly by the registered components. Include wildcards.
+        let (max_top_bytes, max_sub_bytes) = MIME_TYPES
+            .iter()
+            .flat_map(|(_, types)| types.iter())
+            .map(|mime| split_mime(mime))
+            .fold((1, 1), |(max_top, max_sub), (top, sub)| {
+                (max_top.max(top.len()), max_sub.max(sub.len()))
+            });
+        writeln!(
+            outfile,
+            "pub(crate) const MAX_MIME_TOPLEVEL_BYTES: usize = {max_top_bytes};"
+        )
+        .unwrap();
+        writeln!(
+            outfile,
+            "pub(crate) const MAX_MIME_SUBLEVEL_BYTES: usize = {max_sub_bytes};"
+        )
+        .unwrap();
+    }
+
     println!(
         "cargo:rustc-env=MIME_TYPES_GENERATED_PATH={separator}{filename}",
         separator = path::MAIN_SEPARATOR,
