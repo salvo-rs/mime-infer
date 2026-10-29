@@ -22,7 +22,7 @@ Uses a static map of known file extension -> MIME type mappings.
 If only `from_ext` or `from_path` is needed, disable the default reverse mappings:
 
 ```toml
-mime-infer = { version = "4.0.1", default-features = false }
+mime-infer = { version = "4.1.0", default-features = false }
 ```
 
 To also select perfect-hash lookup, add `features = ["phf-map"]` to that dependency.

@@ -3,11 +3,11 @@ name: Rust
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
+  workflow_call:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: rust-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -77,6 +77,9 @@ jobs:
 
       - name: Install Rust 1.95.0
         run: rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal
+
+      - name: Test release package verification
+        run: python3 -B -m unittest discover -s .github/scripts -p 'test_*.py'
 
       - name: Resolve the minimum supported mime version
         run: cargo update -p mime --precise 0.3.17
