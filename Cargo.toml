@@ -21,7 +21,7 @@ phf-map = ["dep:phf", "dep:phf_codegen"]
 rev-map = []
 
 [dependencies]
-mime = "0.3"
+mime = "0.3.17"
 unicase = "2.9"
 phf = { version = "0.14", optional = true, features = ["unicase"] }
 
