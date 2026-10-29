@@ -12,6 +12,29 @@ Uses a static map of known file extension -> MIME type mappings.
 
 #### [Documentation](https://docs.rs/mime-infer/)
 
+### Features and binary size
+
+- `rev-map` is enabled by default and provides `get_extensions`,
+  `get_mime_extensions`, and `get_mime_extensions_str` for MIME-to-extension queries.
+- `phf-map` selects perfect-hash lookup instead of binary search. It can be used
+  with or without `rev-map`.
+
+If only `from_ext` or `from_path` is needed, disable the default reverse mappings:
+
+```toml
+mime-infer = { version = "4.0.1", default-features = false }
+```
+
+To also select perfect-hash lookup, add `features = ["phf-map"]` to that dependency.
+Cargo features are additive: another dependency enabling `rev-map` on the same
+crate version will enable the reverse APIs and tables for the combined build.
+
+Reverse queries return static slices without allocating at runtime. Their tables
+include separate sorted, deduplicated lists for wildcard queries. These lists
+have a static-data cost when linked into an application. Unused tables may be
+removed by the linker, so compare final application binaries with the same target
+and build profile; a library archive's size is not the application's size cost.
+
 ### Versioning
 
 Due to a mistaken premature release, `mime_infer` currently publicly depends on a pre-1.0 `mime`,
