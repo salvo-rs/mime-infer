@@ -420,18 +420,33 @@ pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
 ///
 #[cfg(feature = "rev-map")]
 pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]> {
-    if mime_str.bytes().any(|byte| byte.is_ascii_control()) {
+    let candidate = mime_str.trim_start_matches(' ');
+    // A matching essence must fit the generated component bounds. Search only
+    // that prefix rather than walking an arbitrarily long unknown token.
+    let slash = candidate
+        .bytes()
+        .take(impl_::MAX_MIME_TOPLEVEL_BYTES + 1)
+        .position(|byte| byte == b'/')?;
+    let top = &candidate[..slash];
+    let rest = &candidate[slash + 1..];
+    let sub_end = rest
+        .bytes()
+        .take(impl_::MAX_MIME_SUBLEVEL_BYTES + 1)
+        .position(|byte| matches!(byte, b' ' | b';'))
+        .unwrap_or(rest.len());
+    let extensions = get_extensions(top, &rest[..sub_end])?;
+
+    // Only ASCII spaces may separate the essence from the parameter delimiter.
+    // Skip parameter validation entirely when the essence cannot match, while
+    // still rejecting a control character anywhere in a successful lookup.
+    let tail = rest[sub_end..].trim_start_matches(' ');
+    if (!tail.is_empty() && !tail.starts_with(';'))
+        || mime_str.bytes().any(|byte| byte.is_ascii_control())
+    {
         return None;
     }
 
-    let mime_str = mime_str.trim_matches(' ');
-    let essence = mime_str
-        .split_once(';')
-        .map_or(mime_str, |(essence, _)| essence)
-        .trim_matches(' ');
-    let (top, sub) = essence.split_once('/')?;
-
-    get_extensions(top, sub)
+    Some(extensions)
 }
 
 /// Get the extensions for a given top-level and sub-level of a MIME type
@@ -448,6 +463,12 @@ pub fn get_mime_extensions_str(mime_str: &str) -> Option<&'static [&'static str]
 /// Wildcard results contain each extension once, in lexicographic order.
 #[cfg(feature = "rev-map")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
+    if toplevel.len() > impl_::MAX_MIME_TOPLEVEL_BYTES
+        || sublevel.len() > impl_::MAX_MIME_SUBLEVEL_BYTES
+    {
+        return None;
+    }
+
     let valid = match (toplevel, sublevel) {
         ("*", "*") => true,
         ("*", _) => false,
