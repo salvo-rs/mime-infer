@@ -3,11 +3,11 @@ name: Dependency audit
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
+  workflow_call:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: audit-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:

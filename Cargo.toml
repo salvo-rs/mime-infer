@@ -1,7 +1,7 @@
 [package]
 
 name = "mime-infer"
-version = "4.0.1"
+version = "4.1.0"
 authors = ["Austin Bonander <austin.bonander@gmail.com>", "Chrislearn Young <chris@acroidea.com>"]
 license = "MIT"
 description = "A simple crate for detection of a file's MIME type by its extension."
